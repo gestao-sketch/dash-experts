@@ -183,8 +183,8 @@ export function TopExpertsCard({ data }: TopExpertsCardProps) {
                      ))}
                    </Pie>
                    <Tooltip 
-                     formatter={(value: number, name: string, props: any) => [
-                       `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, 
+                     formatter={(value: any, name: any, props: any) => [
+                       `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, 
                        props.payload.name
                      ]}
                      contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fafafa', fontSize: '12px', borderRadius: '8px', padding: '12px' }}

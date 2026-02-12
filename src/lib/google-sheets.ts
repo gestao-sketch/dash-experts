@@ -115,7 +115,7 @@ async function fetchSheetData(gid: string): Promise<Metrics[]> {
     
     if (rows.length === 0) return [];
 
-    return rows.map((row: any[]) => {
+    const result: (Metrics | null)[] = rows.map((row: any[]) => {
       // Proteção contra linhas vazias ou incompletas
       if (!row || row.length === 0) return null;
 
@@ -135,9 +135,9 @@ async function fetchSheetData(gid: string): Promise<Metrics[]> {
 
       // Debug agressivo de DATA e SCORES (Apenas para as primeiras 3 linhas para não floodar)
       if (Math.random() < 0.1) {
-         console.log(`[DEBUG] Row Raw:`, JSON.stringify(row.slice(0, 10))); // Mostra as primeiras 10 colunas
-         console.log(`[DEBUG] Date Col[0]: "${row[0]}", Parsed: "${dateStr}"`);
-         console.log(`[DEBUG] Score Col[7]: "${row[7]}", Live Col[8]: "${row[8]}"`);
+         // console.log(`[DEBUG] Row Raw:`, JSON.stringify(row.slice(0, 10))); // Mostra as primeiras 10 colunas
+         // console.log(`[DEBUG] Date Col[0]: "${row[0]}", Parsed: "${dateStr}"`);
+         // console.log(`[DEBUG] Score Col[7]: "${row[7]}", Live Col[8]: "${row[8]}"`);
       }
 
       return {
@@ -173,7 +173,9 @@ async function fetchSheetData(gid: string): Promise<Metrics[]> {
         classificacao: classificacao,
         tendencia: tendencia,
       };
-    }).filter((item): item is Metrics => item !== null);
+    });
+
+    return result.filter((item): item is Metrics => item !== null);
 
   } catch (error) {
     console.error(`Error fetching data for GID ${gid}:`, error);

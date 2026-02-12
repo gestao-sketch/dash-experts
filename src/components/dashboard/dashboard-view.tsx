@@ -184,7 +184,7 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
   }, [filteredData, isGeneralView]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20 md:pb-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-center gap-3 mb-1">

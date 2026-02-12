@@ -81,7 +81,7 @@ export function DataTable({ data }: DataTableProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border border-border/50">
+        <div className="rounded-md border border-border/50 overflow-x-auto">
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
