@@ -11,6 +11,7 @@ interface TopExpertsCardProps {
   data: Metrics[];
 }
 
+// Componente de Top Experts com toggle de métricas
 export function TopExpertsCard({ data }: TopExpertsCardProps) {
   const [metric, setMetric] = useState<'deposits' | 'sales'>('deposits');
 
