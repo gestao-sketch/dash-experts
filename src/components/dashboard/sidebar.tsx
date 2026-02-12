@@ -18,7 +18,7 @@ export async function Sidebar() {
                src="/logo-light.png" 
                alt="Arca Logo" 
                fill
-               className="object-contain dark:hidden transition-all duration-300" 
+               className="object-contain block [.dark_&]:hidden transition-all duration-300" 
                priority
              />
              {/* Logo para DARK MODE (Antiga, Branca) */}
@@ -26,7 +26,7 @@ export async function Sidebar() {
                src="/logo-arca.png" 
                alt="Arca Logo" 
                fill
-               className="object-contain hidden dark:block transition-all duration-300" 
+               className="object-contain hidden [.dark_&]:block transition-all duration-300" 
                priority
              />
            </div>

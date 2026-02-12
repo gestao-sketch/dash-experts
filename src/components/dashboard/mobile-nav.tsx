@@ -28,7 +28,7 @@ export function MobileNav({ clients }: { clients: ClientConfig[] }) {
                     src="/logo-light.png" 
                     alt="Arca Logo" 
                     fill
-                    className="object-contain dark:hidden transition-all" 
+                    className="object-contain block [.dark_&]:hidden transition-all" 
                     priority
                   />
                   {/* Dark Mode */}
@@ -36,7 +36,7 @@ export function MobileNav({ clients }: { clients: ClientConfig[] }) {
                     src="/logo-arca.png" 
                     alt="Arca Logo" 
                     fill
-                    className="object-contain hidden dark:block transition-all" 
+                    className="object-contain hidden [.dark_&]:block transition-all" 
                     priority
                   />
                 </div>
@@ -58,14 +58,14 @@ export function MobileNav({ clients }: { clients: ClientConfig[] }) {
               src="/logo-light.png" 
               alt="Arca Logo" 
               fill
-              className="object-contain dark:hidden transition-all" 
+              className="object-contain block [.dark_&]:hidden transition-all" 
             />
             {/* Dark Mode */}
             <Image 
               src="/logo-arca.png" 
               alt="Arca Logo" 
               fill
-              className="object-contain hidden dark:block transition-all" 
+              className="object-contain hidden [.dark_&]:block transition-all" 
             />
         </div>
         <span className="font-bold text-sm">Dash Arca</span>
