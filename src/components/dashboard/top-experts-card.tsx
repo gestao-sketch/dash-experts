@@ -91,6 +91,13 @@ export function TopExpertsCard({ data }: TopExpertsCardProps) {
 
   const maxValue = top5.length > 0 ? top5[0].value : 1;
 
+  const tooltipFormatter = (value: any, name: any, props: any) => {
+    return [
+      `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, 
+      props.payload.name
+    ];
+  };
+
   return (
     <Card className="col-span-1 lg:col-span-3 border-border/50 bg-card flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -183,14 +190,11 @@ export function TopExpertsCard({ data }: TopExpertsCardProps) {
                        <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
                      ))}
                    </Pie>
-                   <Tooltip 
-                     formatter={(value: any, name: any, props: any) => [
-                       `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, 
-                       props.payload.name
-                     ]}
-                     contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fafafa', fontSize: '12px', borderRadius: '8px', padding: '12px' }}
-                     itemStyle={{ color: '#fafafa' }}
-                   />
+                  <Tooltip 
+                    formatter={tooltipFormatter}
+                    contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fafafa', fontSize: '12px', borderRadius: '8px', padding: '12px' }}
+                    itemStyle={{ color: '#fafafa' }}
+                  />
                    <Legend 
                      verticalAlign="bottom" 
                      height={80} // Altura maior para caber mais itens
