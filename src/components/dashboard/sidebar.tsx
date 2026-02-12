@@ -13,11 +13,20 @@ export async function Sidebar() {
       <div className="flex h-20 items-center justify-center border-b border-border px-6">
         <Link href="/" className="flex items-center gap-2">
            <div className="relative h-12 w-12">
+             {/* Logo para LIGHT MODE (Nova) */}
+             <Image 
+               src="/logo-light.png" 
+               alt="Arca Logo" 
+               fill
+               className="object-contain dark:hidden transition-all duration-300" 
+               priority
+             />
+             {/* Logo para DARK MODE (Antiga, Branca) */}
              <Image 
                src="/logo-arca.png" 
                alt="Arca Logo" 
                fill
-               className="object-contain invert dark:invert-0 transition-all duration-300" 
+               className="object-contain hidden dark:block transition-all duration-300" 
                priority
              />
            </div>

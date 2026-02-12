@@ -23,11 +23,20 @@ export function MobileNav({ clients }: { clients: ClientConfig[] }) {
           <div className="flex items-center justify-center px-6 py-4 border-b border-border mb-4 h-20">
              <Link href="/" className="flex items-center gap-2">
                 <div className="relative h-10 w-10">
+                  {/* Light Mode */}
+                  <Image 
+                    src="/logo-light.png" 
+                    alt="Arca Logo" 
+                    fill
+                    className="object-contain dark:hidden transition-all" 
+                    priority
+                  />
+                  {/* Dark Mode */}
                   <Image 
                     src="/logo-arca.png" 
                     alt="Arca Logo" 
                     fill
-                    className="object-contain invert dark:invert-0 transition-all" 
+                    className="object-contain hidden dark:block transition-all" 
                     priority
                   />
                 </div>
@@ -44,11 +53,19 @@ export function MobileNav({ clients }: { clients: ClientConfig[] }) {
       </Sheet>
       <div className="flex items-center gap-2 ml-auto sm:ml-0">
         <div className="relative h-8 w-8">
+            {/* Light Mode */}
             <Image 
-            src="/logo-arca.png" 
-            alt="Arca Logo" 
-            fill
-            className="object-contain invert dark:invert-0 transition-all" 
+              src="/logo-light.png" 
+              alt="Arca Logo" 
+              fill
+              className="object-contain dark:hidden transition-all" 
+            />
+            {/* Dark Mode */}
+            <Image 
+              src="/logo-arca.png" 
+              alt="Arca Logo" 
+              fill
+              className="object-contain hidden dark:block transition-all" 
             />
         </div>
         <span className="font-bold text-sm">Dash Arca</span>
