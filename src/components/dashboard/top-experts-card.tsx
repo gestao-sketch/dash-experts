@@ -191,6 +191,7 @@ export function TopExpertsCard({ data }: TopExpertsCardProps) {
                      ))}
                    </Pie>
                   <Tooltip 
+                    // @ts-ignore
                     formatter={tooltipFormatter}
                     contentStyle={{ backgroundColor: '#09090b', borderColor: '#27272a', color: '#fafafa', fontSize: '12px', borderRadius: '8px', padding: '12px' }}
                     itemStyle={{ color: '#fafafa' }}
