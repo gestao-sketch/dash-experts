@@ -48,7 +48,7 @@ export function DataTable({ data }: DataTableProps) {
   };
 
   return (
-    <Card className="col-span-1 md:col-span-4 border-border/50 bg-card/95 mt-8">
+    <Card className="col-span-1 md:col-span-4 border-border/50 bg-card mt-8">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Base de Dados Detalhada</CardTitle>
         <div className="flex items-center gap-4">

@@ -7,6 +7,7 @@ import { SidebarNav } from "./sidebar-nav";
 import { ClientConfig } from "@/config/sheets";
 import Image from "next/image";
 import Link from "next/link";
+import { ModeToggle } from "@/components/mode-toggle";
 
 export function MobileNav({ clients }: { clients: ClientConfig[] }) {
   return (
@@ -26,7 +27,7 @@ export function MobileNav({ clients }: { clients: ClientConfig[] }) {
                     src="/logo-arca.png" 
                     alt="Arca Logo" 
                     fill
-                    className="object-contain" 
+                    className="object-contain invert dark:invert-0 transition-all" 
                     priority
                   />
                 </div>
@@ -36,6 +37,9 @@ export function MobileNav({ clients }: { clients: ClientConfig[] }) {
           <div className="px-2">
              <SidebarNav clients={clients} />
           </div>
+          <div className="absolute bottom-4 left-4 right-4 flex justify-center">
+             <ModeToggle />
+          </div>
         </SheetContent>
       </Sheet>
       <div className="flex items-center gap-2 ml-auto sm:ml-0">
@@ -44,7 +48,7 @@ export function MobileNav({ clients }: { clients: ClientConfig[] }) {
             src="/logo-arca.png" 
             alt="Arca Logo" 
             fill
-            className="object-contain" 
+            className="object-contain invert dark:invert-0 transition-all" 
             />
         </div>
         <span className="font-bold text-sm">Dash Arca</span>

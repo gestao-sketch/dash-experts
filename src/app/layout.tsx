@@ -4,6 +4,8 @@ import "./globals.css";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
 import { fetchClients } from "@/lib/google-sheets";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,21 +31,32 @@ export default async function RootLayout({
   const clients = await fetchClients();
 
   return (
-    <html lang="en" className="dark">
+    <html lang="pt-BR" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col md:flex-row h-screen overflow-hidden bg-background text-foreground`}
       >
-        {/* Sidebar Desktop (Hidden on Mobile) */}
-        <div className="hidden md:block">
-           <Sidebar />
-        </div>
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="dark" // Padrão escuro
+            enableSystem
+            disableTransitionOnChange
+        >
+            {/* Sidebar Desktop (Hidden on Mobile) */}
+            <div className="hidden md:block">
+               <Suspense fallback={<div className="w-64 h-screen bg-sidebar border-r border-border" />}>
+                  <Sidebar />
+               </Suspense>
+            </div>
 
-        {/* Mobile Nav (Hidden on Desktop) */}
-        <MobileNav clients={clients} />
+            <div className="flex-1 flex flex-col h-full overflow-hidden">
+                {/* Mobile Nav (Hidden on Desktop) */}
+                <MobileNav clients={clients} />
 
-        <main className="flex-1 overflow-y-auto bg-background/50 p-4 md:p-8">
-          {children}
-        </main>
+                <main className="flex-1 overflow-y-auto bg-background/50 p-4 md:p-8">
+                  {children}
+                </main>
+            </div>
+        </ThemeProvider>
       </body>
     </html>
   );

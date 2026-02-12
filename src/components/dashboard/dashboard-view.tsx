@@ -2,102 +2,147 @@
 
 import { useState, useMemo } from "react";
 import { Metrics } from "@/config/sheets";
-import { aggregateMetrics, getDailyEvolution, getBestDay, calculateForecast } from "@/lib/analytics";
+import { aggregateMetrics, getDailyEvolution } from "@/lib/analytics";
+import { getDateRange, getPreviousDateRange } from "@/lib/utils";
 import { MetricCard } from "./metric-card";
 import { OverviewChart } from "./overview-chart";
-import { BestDayCard } from "./best-day-card";
-import { ForecastCard } from "./forecast-card";
 import { DataTable } from "./data-table";
 import { DailySummaryCard } from "./daily-summary-card";
 import { LiveQualityCard } from "./live-quality-card";
 import { ExpertsQualityCard } from "./experts-quality-card";
 import { TopExpertsCard } from "./top-experts-card";
+import { ExpertProgressChart } from "./expert-progress-chart";
+import { ScalingOpportunitiesCard } from "./scaling-opportunities-card";
+import { ExpertStatusBadge } from "./expert-status-badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, MousePointer2, TrendingUp, Users, ShoppingCart, ArrowRightLeft } from "lucide-react";
+import { DollarSign, TrendingUp, Users, ShoppingCart, ArrowRightLeft } from "lucide-react";
 
 export function DashboardView({ data, title }: { data: Metrics[], title: string }) {
   const [range, setRange] = useState("30d");
 
-  const filteredData = useMemo(() => {
+  // 1. Gera um array de datas completo baseado no range selecionado
+  const dateRange = useMemo(() => {
+    const dates: string[] = [];
     const now = new Date();
-    // Zerar horas para comparação correta
+    // Zerar horas
     now.setHours(0, 0, 0, 0);
+    
+    let startDate = new Date(now);
+    let endDate = new Date(now);
+
+    switch (range) {
+      case "today":
+        startDate = new Date(now);
+        break;
+      case "yesterday":
+        startDate.setDate(now.getDate() - 1);
+        endDate = new Date(startDate);
+        break;
+      case "this_week":
+        startDate.setDate(now.getDate() - now.getDay());
+        break;
+      case "last_week":
+        startDate.setDate(now.getDate() - now.getDay() - 7);
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        break;
+      case "this_month":
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case "last_month":
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        break;
+      case "this_year":
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      case "last_year":
+        startDate = new Date(now.getFullYear() - 1, 0, 1);
+        endDate = new Date(now.getFullYear() - 1, 11, 31);
+        break;
+      case "30d":
+        startDate.setDate(now.getDate() - 30);
+        break;
+      case "all":
+      default:
+        // Para "all", vamos pegar a data mais antiga dos dados reais ou 30 dias atrás como fallback
+        if (data.length > 0) {
+             const sortedDates = [...data].sort((a,b) => {
+                 const parse = (d: string) => { const p = d.split('/'); return new Date(`${p[1]}/${p[0]}/${p[2]}`).getTime(); };
+                 return parse(a.date) - parse(b.date);
+             });
+             const firstDateParts = sortedDates[0].date.split('/');
+             startDate = new Date(`${firstDateParts[1]}/${firstDateParts[0]}/${firstDateParts[2]}`);
+        } else {
+             startDate.setDate(now.getDate() - 30);
+        }
+        break;
+    }
+
+    // Loop para preencher o array de datas
+    const currentDate = new Date(startDate);
+    // Ajuste para garantir que endDate inclua o próprio dia na comparação
+    endDate.setHours(23, 59, 59, 999); 
+
+    while (currentDate <= endDate) {
+        // Formato DD/MM/YYYY
+        const day = String(currentDate.getDate()).padStart(2, '0');
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const year = currentDate.getFullYear();
+        dates.push(`${day}/${month}/${year}`);
+        
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    return dates;
+  }, [range, data]);
+
+  // 2. Filtra os dados existentes baseados no range (mantém lógica de KPIs)
+  const filteredData = useMemo(() => {
+    const { startDate, endDate } = getDateRange(range);
 
     return data.filter(item => {
-      // Parse DD/MM/YYYY
-      const parts = item.date.split('/');
-      if (parts.length !== 3) return false;
-      const date = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`); // MM/DD/YYYY
-      date.setHours(0, 0, 0, 0);
+        const parts = item.date.split('/');
+        if (parts.length !== 3) return false;
+        const date = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`);
+        date.setHours(0, 0, 0, 0);
 
-      switch (range) {
-        case "today":
-          return date.getTime() === now.getTime();
-        
-        case "yesterday":
-          const yesterday = new Date(now);
-          yesterday.setDate(now.getDate() - 1);
-          return date.getTime() === yesterday.getTime();
-        
-        case "this_week": {
-          const startOfWeek = new Date(now);
-          startOfWeek.setDate(now.getDate() - now.getDay()); // Domingo como inicio
-          return date >= startOfWeek;
-        }
-
-        case "last_week": {
-          const startOfLastWeek = new Date(now);
-          startOfLastWeek.setDate(now.getDate() - now.getDay() - 7);
-          const endOfLastWeek = new Date(startOfLastWeek);
-          endOfLastWeek.setDate(startOfLastWeek.getDate() + 6);
-          return date >= startOfLastWeek && date <= endOfLastWeek;
-        }
-
-        case "this_month": {
-          const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-          return date >= startOfMonth;
-        }
-
-        case "last_month": {
-          const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-          return date >= startOfLastMonth && date <= endOfLastMonth;
-        }
-
-        case "this_year": {
-          const startOfYear = new Date(now.getFullYear(), 0, 1);
-          return date >= startOfYear;
-        }
-
-        case "last_year": {
-          const startOfLastYear = new Date(now.getFullYear() - 1, 0, 1);
-          const endOfLastYear = new Date(now.getFullYear() - 1, 11, 31);
-          return date >= startOfLastYear && date <= endOfLastYear;
-        }
-
-        case "30d": {
-          const thirtyDaysAgo = new Date(now);
-          thirtyDaysAgo.setDate(now.getDate() - 30);
-          return date >= thirtyDaysAgo;
-        }
-
-        case "all":
-        default:
-          return true;
-      }
+        // O endDate já vem configurado corretamente do util
+        return date >= startDate && date <= endDate;
     });
   }, [data, range]);
 
+  // 3. Filtra dados do período anterior para comparação
+  const previousFilteredData = useMemo(() => {
+      const { startDate, endDate } = getPreviousDateRange(range);
+      
+      return data.filter(item => {
+        const parts = item.date.split('/');
+        if (parts.length !== 3) return false;
+        const date = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`);
+        date.setHours(0, 0, 0, 0);
+
+        return date >= startDate && date <= endDate;
+      });
+  }, [data, range]);
+
+  // 4. Gera dados do gráfico preenchendo buracos com 0
+  const chartData = useMemo(() => {
+    // Agrupa dados existentes por data para acesso rápido
+    const dataByDate: Record<string, number> = {};
+    filteredData.forEach(item => {
+        if (!dataByDate[item.date]) dataByDate[item.date] = 0;
+        dataByDate[item.date] += item.deposits;
+    });
+
+    // Mapeia o range completo de datas
+    return dateRange.map(date => ({
+        date: date.substring(0, 5), // DD/MM para exibição
+        value: dataByDate[date] || 0 // Valor real ou 0
+    }));
+  }, [dateRange, filteredData]);
+
   const stats = aggregateMetrics(filteredData);
   const dailyData = getDailyEvolution(filteredData);
-  const bestDay = getBestDay(dailyData, "deposits"); // Melhor dia baseado em depósitos
-  const forecast = calculateForecast(dailyData, 7);
-  const forecastTotal = forecast.reduce((acc, curr) => acc + curr.deposits, 0); // Forecast ainda usa revenue como base linear? Ajustar para deposits
-
-  // Combine historical and forecast for chart
-  const chartData = [
-    ...dailyData.map(d => ({ date: d.date.substring(0, 5), value: d.deposits })), // Gráfico usa Depósitos
-  ];
 
   const getRangeLabel = () => {
     switch(range) {
@@ -115,11 +160,43 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
     }
   };
 
+  const isGeneralView = title.includes("Visão Geral");
+
+  // Helper para pegar status atual (última data válida DENTRO DO PERÍODO FILTRADO)
+  const currentStatus = useMemo(() => {
+    // Se for geral, não faz sentido calcular um único status
+    if (isGeneralView) return { classificacao: "N/A", tendencia: "N/A" };
+
+    // Usamos filteredData para respeitar o range de datas selecionado
+    const sorted = [...filteredData].sort((a, b) => {
+        // Ordenação decrescente por data para pegar o mais recente do período
+        const parse = (d: string) => { const p = d.split('/'); return new Date(`${p[1]}/${p[0]}/${p[2]}`).getTime(); };
+        return parse(b.date) - parse(a.date);
+    });
+    
+    // Encontrar primeiro com classificação não vazia dentro do período
+    const latest = sorted.find(item => item.classificacao && item.classificacao.length > 0);
+    
+    return {
+        classificacao: latest?.classificacao || "N/A",
+        tendencia: latest?.tendencia || "N/A"
+    };
+  }, [filteredData, isGeneralView]);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">{title}</h1>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
+            {/* Badge de Status na Página do Expert */}
+            {!isGeneralView && (
+                <ExpertStatusBadge 
+                    classificacao={currentStatus.classificacao} 
+                    tendencia={currentStatus.tendencia} 
+                />
+            )}
+          </div>
           <p className="text-muted-foreground">Acompanhamento de performance em tempo real.</p>
         </div>
         <Select value={range} onValueChange={setRange}>
@@ -150,6 +227,18 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
           color="chart-5" 
           description="Total investido no período"
         />
+
+        {/* Métrica de Faturamento Total (Dinâmica da Planilha) */}
+        {stats.valor_total > 0 && (
+             <MetricCard 
+              title="Vendas Totais" 
+              value={`R$ ${stats.valor_total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`}
+              icon={<DollarSign />}
+              color="chart-3" 
+              description={isGeneralView ? "Soma Total de Vendas" : "Valor Total de Vendas"}
+            />
+        )}
+
         <MetricCard 
           title="Depósitos" 
           value={`R$ ${stats.deposits.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`}
@@ -158,7 +247,7 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
           description="Total depositado"
         />
         <MetricCard 
-          title="FTDs (Vendas)" 
+          title="FTDs (1º Depósito)" 
           value={stats.sales.toString()}
           icon={<ShoppingCart />}
           color="chart-2" // Purple
@@ -174,7 +263,7 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
         />
       </div>
 
-      {/* KPI Grid - Linha 2 (Novos Cards) */}
+      {/* KPI Grid - Linha 2 */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard 
           title="Leads Totais" 
@@ -195,7 +284,7 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
           value={`R$ ${stats.ticket_medio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`}
           icon={<DollarSign />}
           color="chart-1" 
-          description="Valor médio por 1ª venda"
+          description="Valor médio por 1º Depósito"
         />
         <MetricCard 
           title="Revenue Share" 
@@ -206,43 +295,36 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
         />
       </div>
 
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-7">
-        <div className="lg:col-span-5 space-y-4">
-           {/* Gráfico de Evolução */}
-           <OverviewChart 
-             data={chartData} 
-             title="Evolução de Depósitos" 
-             description={getRangeLabel()}
-             color="var(--chart-1)"
-           />
-           
-           {/* Grid: Top Experts + Resumo Diário */}
-           <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              <TopExpertsCard data={filteredData} />
-              <DailySummaryCard data={filteredData} />
-           </div>
-        </div>
-        
-        <div className="lg:col-span-2 space-y-4">
-          {/* Mostra card de ExpertsQuality (Média Geral) se title for "Visão Geral", senão mostra LiveQuality (Diário) */}
-          {title.includes("Visão Geral") ? (
-             <ExpertsQualityCard data={filteredData} />
-          ) : (
-             <LiveQualityCard data={filteredData} />
-          )}
+      {/* Layout Vertical Principal */}
+      <div className="flex flex-col gap-6">
+          
+        {/* 0. Card de Oportunidades de Escala (Apenas Visão Geral) */}
+        {isGeneralView && <ScalingOpportunitiesCard data={filteredData} />}
 
-          {bestDay && (
-             <BestDayCard 
-               date={bestDay.date}
-               revenue={bestDay.deposits} // Melhor dia baseado em depósitos
-               roas={bestDay.roas}
-             />
-          )}
-          <ForecastCard 
-            next7DaysRevenue={forecastTotal}
-            trend={0} 
-          />
-        </div>
+        {/* 1. Qualidade e Performance (Horizontal) */}
+        {isGeneralView ? (
+            <ExpertsQualityCard data={filteredData} previousData={previousFilteredData} />
+        ) : (
+            <LiveQualityCard data={filteredData} />
+        )}
+
+        {/* 2. Gráfico de Evolução (Expert ou Geral) */}
+        {isGeneralView ? (
+             <OverviewChart 
+              data={chartData} 
+              title="Evolução de Depósitos" 
+              description={getRangeLabel()}
+              color="var(--chart-1)"
+            />
+        ) : (
+            <ExpertProgressChart data={filteredData} title={`Progresso: ${title.replace("Dashboard - ", "")}`} />
+        )}
+
+        {/* 3. Top Experts - Apenas na visão geral */}
+        {isGeneralView && <TopExpertsCard data={filteredData} />}
+        
+        {/* 4. Diário de Bordo */}
+        <DailySummaryCard data={filteredData} />
       </div>
       
       {/* Tabela de Conferência */}

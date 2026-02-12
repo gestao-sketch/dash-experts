@@ -43,7 +43,7 @@ export function LiveQualityCard({ data }: LiveQualityCardProps) {
   const verdict = getVerdict();
 
   return (
-    <Card className="border-border/50 bg-card/95 h-full flex flex-col">
+    <Card className="border-border/50 bg-card h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Qualidade & Performance</CardTitle>
         <Star className="h-4 w-4 text-yellow-500" />

@@ -8,6 +8,7 @@ export type AggregatedMetrics = {
   sales: number;
   revenue: number;
   deposits: number;
+  valor_total: number; // Nova métrica de vendas
   
   leads_entrada: number;
   leads_saida: number;
@@ -31,10 +32,11 @@ export function aggregateMetrics(data: Metrics[]): AggregatedMetrics {
       sales: acc.sales + curr.sales,
       revenue: acc.revenue + curr.revenue,
       deposits: acc.deposits + curr.deposits,
+      valor_total: (acc.valor_total || 0) + (curr.valor_total || 0), // Soma segura
       leads_entrada: acc.leads_entrada + curr.leads_entrada,
       leads_saida: acc.leads_saida + curr.leads_saida,
     }),
-    { impressions: 0, clicks: 0, cost: 0, leads: 0, sales: 0, revenue: 0, deposits: 0, leads_entrada: 0, leads_saida: 0 }
+    { impressions: 0, clicks: 0, cost: 0, leads: 0, sales: 0, revenue: 0, deposits: 0, valor_total: 0, leads_entrada: 0, leads_saida: 0 }
   );
 
   return {

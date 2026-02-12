@@ -19,8 +19,11 @@ export function OverviewChart({
   valuePrefix = "R$ "
 }: OverviewChartProps) {
   
+  // Cor Verde Fixa para consistência visual em ambos os temas
+  const greenColor = "#10b981"; // Emerald-500 equivalent
+
   return (
-    <Card className="col-span-4 border-border/50 bg-card/95">
+    <Card className="col-span-4 border-border/50 bg-card">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
@@ -31,8 +34,8 @@ export function OverviewChart({
             <AreaChart data={data}>
               <defs>
                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={color} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={color} stopOpacity={0} />
+                  <stop offset="5%" stopColor={greenColor} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={greenColor} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted/20" vertical={false} />
@@ -58,13 +61,13 @@ export function OverviewChart({
                   borderRadius: "8px",
                   color: "#fafafa"
                 }}
-                itemStyle={{ color: color }}
+                itemStyle={{ color: greenColor }}
                 formatter={(value: any) => [`${valuePrefix}${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor']}
               />
               <Area 
                 type="monotone" 
                 dataKey="value" 
-                stroke={color} 
+                stroke={greenColor} 
                 strokeWidth={2}
                 fillOpacity={1} 
                 fill="url(#colorValue)" 

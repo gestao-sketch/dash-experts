@@ -42,6 +42,11 @@ export const COLUMN_MAPPING = {
   detalhado: 22,    
   revenue: 23,      
   
+  // Mapeamento Dinâmico (será buscado pelo nome no header se possível, ou fallback)
+  valor_total: -1, 
+  classificacao: -1,
+  tendencia: -1,
+  
   impressions: -1, 
   clicks: -1, 
   roas: -1,     
@@ -75,6 +80,11 @@ export type Metrics = {
   // Campos de texto
   resumo_80_20?: string;
   detalhado?: string;
+  
+  // Nova métrica opcional
+  valor_total?: number;
+  classificacao?: string; // MANTER, ESCALAR, EM RISCO
+  tendencia?: string; // SUBINDO, ESTÁVEL, DESCENDO
   
   // Compatibilidade
   impressions: number;

@@ -92,6 +92,25 @@ async function fetchSheetData(gid: string): Promise<Metrics[]> {
     // O usuário informou que os dados começam na linha 5.
     // Arrays são base 0, então linha 1 = index 0. Linha 5 = index 4.
     // Vamos pegar do index 4 para frente.
+    
+    // Tentativa de encontrar colunas dinâmicas no cabeçalho (linha 4 = index 3)
+    let valorTotalIndex = -1;
+    let classificacaoIndex = -1;
+    let tendenciaIndex = -1;
+
+    if (data.length > 3) {
+        const headerRow = data[3];
+        if (Array.isArray(headerRow)) {
+            const getIndex = (term: string) => headerRow.findIndex((col: any) => 
+                String(col).toUpperCase().trim().includes(term.toUpperCase())
+            );
+
+            valorTotalIndex = getIndex("VALOR TOTAL");
+            classificacaoIndex = getIndex("CLASSIFICAÇÃO") > -1 ? getIndex("CLASSIFICAÇÃO") : getIndex("CLASSIFICACAO");
+            tendenciaIndex = getIndex("TENDÊNCIA") > -1 ? getIndex("TENDÊNCIA") : getIndex("TENDENCIA");
+        }
+    }
+
     const rows = data.slice(4); 
     
     if (rows.length === 0) return [];
@@ -109,6 +128,10 @@ async function fetchSheetData(gid: string): Promise<Metrics[]> {
 
       const cost = parseNumber(row[COLUMN_MAPPING.cost]);
       const revenue = parseNumber(row[COLUMN_MAPPING.revenue]);
+      const valorTotal = valorTotalIndex > -1 ? parseNumber(row[valorTotalIndex]) : 0;
+      
+      const classificacao = classificacaoIndex > -1 ? String(row[classificacaoIndex]).trim().toUpperCase() : "";
+      const tendencia = tendenciaIndex > -1 ? String(row[tendenciaIndex]).trim().toUpperCase() : "";
 
       // Debug agressivo de DATA e SCORES (Apenas para as primeiras 3 linhas para não floodar)
       if (Math.random() < 0.1) {
@@ -145,6 +168,10 @@ async function fetchSheetData(gid: string): Promise<Metrics[]> {
         // Mapear campos de texto
         resumo_80_20: row[COLUMN_MAPPING.resumo_80_20] ? String(row[COLUMN_MAPPING.resumo_80_20]) : "",
         detalhado: row[COLUMN_MAPPING.detalhado] ? String(row[COLUMN_MAPPING.detalhado]) : "",
+        
+        valor_total: valorTotal,
+        classificacao: classificacao,
+        tendencia: tendencia,
       };
     }).filter((item): item is Metrics => item !== null);
 

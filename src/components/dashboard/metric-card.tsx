@@ -14,7 +14,7 @@ interface MetricCardProps {
 
 export function MetricCard({ title, value, change, trend, icon, color = "chart-1", description }: MetricCardProps) {
   return (
-    <Card className="border-border/50 bg-card/95">
+    <Card className="border-border/50 bg-card">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}

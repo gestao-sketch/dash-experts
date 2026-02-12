@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { fetchClients } from "@/lib/google-sheets";
-import { SidebarNav } from "./sidebar-nav"; // Client Component wrapper
+import { SidebarNav } from "./sidebar-nav";
 import { Settings } from "lucide-react";
 import Image from "next/image";
+import { ModeToggle } from "@/components/mode-toggle";
 
 export async function Sidebar() {
   const clients = await fetchClients();
@@ -12,12 +13,11 @@ export async function Sidebar() {
       <div className="flex h-20 items-center justify-center border-b border-border px-6">
         <Link href="/" className="flex items-center gap-2">
            <div className="relative h-12 w-12">
-             {/* Aplicando filtro para garantir que fique branco no fundo escuro */}
              <Image 
                src="/logo-arca.png" 
                alt="Arca Logo" 
                fill
-               className="object-contain" 
+               className="object-contain invert dark:invert-0 transition-all duration-300" 
                priority
              />
            </div>
@@ -27,11 +27,12 @@ export async function Sidebar() {
       <div className="flex-1 overflow-auto py-4">
         <SidebarNav clients={clients} />
       </div>
-      <div className="border-t border-border p-4">
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary cursor-not-allowed opacity-50">
+      <div className="border-t border-border p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm font-medium text-muted-foreground transition-all hover:text-primary cursor-not-allowed opacity-50">
           <Settings className="h-4 w-4" />
-          Configurações
+          <span>Config</span>
         </div>
+        <ModeToggle />
       </div>
     </div>
   );
