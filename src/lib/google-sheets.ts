@@ -108,6 +108,12 @@ async function fetchSheetData(gid: string): Promise<Metrics[]> {
             valorTotalIndex = getIndex("VALOR TOTAL");
             classificacaoIndex = getIndex("CLASSIFICAÇÃO") > -1 ? getIndex("CLASSIFICAÇÃO") : getIndex("CLASSIFICACAO");
             tendenciaIndex = getIndex("TENDÊNCIA") > -1 ? getIndex("TENDÊNCIA") : getIndex("TENDENCIA");
+
+            // Fallback para índices fixos (AW=48, AZ=51) se não achar no header
+            // AW (49ª coluna) = index 48
+            // AZ (52ª coluna) = index 51
+            if (classificacaoIndex === -1) classificacaoIndex = 48; 
+            if (tendenciaIndex === -1) tendenciaIndex = 51;
         }
     }
 
