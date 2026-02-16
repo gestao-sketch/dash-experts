@@ -270,26 +270,26 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
     }
   };
 
-  // Helper para pegar status atual (última data válida DENTRO DO PERÍODO FILTRADO)
+  // Helper para pegar status atual (última data válida GLOBAL, independente do filtro)
   const currentStatus = useMemo(() => {
     // Se for geral, não faz sentido calcular um único status
     if (isGeneralView) return { classificacao: "N/A", tendencia: "N/A" };
 
-    // Usamos filteredData para respeitar o range de datas selecionado
-    const sorted = [...filteredData].sort((a, b) => {
-        // Ordenação decrescente por data para pegar o mais recente do período
+    // Usamos 'data' (todos os dados) em vez de 'filteredData' para pegar o status mais recente real
+    // Isso garante que o badge reflita o estado atual do expert, mesmo olhando métricas antigas
+    const sorted = [...data].sort((a, b) => {
         const parse = (d: string) => { const p = d.split('/'); return new Date(`${p[1]}/${p[0]}/${p[2]}`).getTime(); };
         return parse(b.date) - parse(a.date);
     });
     
-    // Encontrar primeiro com classificação não vazia dentro do período
+    // Encontrar primeiro com classificação não vazia (o mais recente de todos)
     const latest = sorted.find(item => item.classificacao && item.classificacao.length > 0);
     
     return {
         classificacao: latest?.classificacao || "N/A",
         tendencia: latest?.tendencia || "N/A"
     };
-  }, [filteredData, isGeneralView]);
+  }, [data, isGeneralView]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20 md:pb-8">
