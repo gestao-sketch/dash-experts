@@ -17,7 +17,7 @@ import { ExpertStatusBadge } from "./expert-status-badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePickerWithRange } from "@/components/date-range-picker";
 import { DateRange } from "react-day-picker";
-import { DollarSign, TrendingUp, Users, ShoppingCart, ArrowRightLeft } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, Users, ShoppingCart, ArrowRightLeft } from "lucide-react";
 
 export function DashboardView({ data, title }: { data: Metrics[], title: string }) {
   const [range, setRange] = useState("30d");
@@ -205,6 +205,48 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
 
   const stats = aggregateMetrics(filteredData);
   const dailyData = getDailyEvolution(filteredData);
+
+  // Cálculo de Evolução (Semanal e Mensal) - Baseado em dados TOTAIS (data)
+  const evolutionStats = useMemo(() => {
+    if (isGeneralView) return null;
+
+    const now = new Date();
+    now.setHours(23, 59, 59, 999);
+
+    const getSumForRange = (daysAgoStart: number, daysAgoEnd: number) => {
+        const start = new Date(now);
+        start.setDate(now.getDate() - daysAgoStart);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(now);
+        end.setDate(now.getDate() - daysAgoEnd);
+        end.setHours(23, 59, 59, 999);
+
+        return data.reduce((acc, item) => {
+            const parts = item.date.split('/');
+            // Validação simples de data
+            if (parts.length !== 3) return acc;
+            
+            const itemDate = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`);
+            
+            if (itemDate >= start && itemDate <= end) {
+                // Prioriza Valor Total (Vendas) se existir, senão Depósitos
+                return acc + (item.valor_total || item.deposits || 0);
+            }
+            return acc;
+        }, 0);
+    };
+
+    const last7d = getSumForRange(6, 0); // 7 dias (incluindo hoje)
+    const prev7d = getSumForRange(13, 7); // 7 dias anteriores
+    const weeklyGrowth = prev7d === 0 ? (last7d > 0 ? 100 : 0) : ((last7d - prev7d) / prev7d) * 100;
+
+    const last30d = getSumForRange(29, 0); // 30 dias
+    const prev30d = getSumForRange(59, 30); // 30 dias anteriores
+    const monthlyGrowth = prev30d === 0 ? (last30d > 0 ? 100 : 0) : ((last30d - prev30d) / prev30d) * 100;
+
+    return { weeklyGrowth, monthlyGrowth };
+  }, [data, isGeneralView]);
 
   const getRangeLabel = () => {
     switch(range) {
