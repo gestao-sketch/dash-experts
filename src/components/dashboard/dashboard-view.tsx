@@ -22,6 +22,7 @@ import { DollarSign, TrendingUp, TrendingDown, Users, ShoppingCart, ArrowRightLe
 export function DashboardView({ data, title }: { data: Metrics[], title: string }) {
   const [range, setRange] = useState("30d");
   const [customDate, setCustomDate] = useState<DateRange | undefined>(undefined);
+  const isGeneralView = title.includes("Visão Geral");
 
   // 1. Gera um array de datas completo baseado no range selecionado
   const dateRange = useMemo(() => {
@@ -268,8 +269,6 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
       default: return range;
     }
   };
-
-  const isGeneralView = title.includes("Visão Geral");
 
   // Helper para pegar status atual (última data válida DENTRO DO PERÍODO FILTRADO)
   const currentStatus = useMemo(() => {
