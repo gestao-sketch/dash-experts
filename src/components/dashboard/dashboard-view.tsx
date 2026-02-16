@@ -15,14 +15,34 @@ import { ExpertProgressChart } from "./expert-progress-chart";
 import { ScalingOpportunitiesCard } from "./scaling-opportunities-card";
 import { ExpertStatusBadge } from "./expert-status-badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePickerWithRange } from "@/components/date-range-picker";
+import { DateRange } from "react-day-picker";
 import { DollarSign, TrendingUp, Users, ShoppingCart, ArrowRightLeft } from "lucide-react";
 
 export function DashboardView({ data, title }: { data: Metrics[], title: string }) {
   const [range, setRange] = useState("30d");
+  const [customDate, setCustomDate] = useState<DateRange | undefined>(undefined);
 
   // 1. Gera um array de datas completo baseado no range selecionado
   const dateRange = useMemo(() => {
     const dates: string[] = [];
+    
+    // Lógica para intervalo personalizado
+    if (range === "custom" && customDate?.from && customDate?.to) {
+        const currentDate = new Date(customDate.from);
+        const endDate = new Date(customDate.to);
+        endDate.setHours(23, 59, 59, 999);
+
+        while (currentDate <= endDate) {
+            const day = String(currentDate.getDate()).padStart(2, '0');
+            const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+            const year = currentDate.getFullYear();
+            dates.push(`${day}/${month}/${year}`);
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        return dates;
+    }
+
     const now = new Date();
     // Zerar horas
     now.setHours(0, 0, 0, 0);
@@ -63,6 +83,11 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
       case "30d":
         startDate.setDate(now.getDate() - 30);
         break;
+      case "custom":
+        // Se for custom mas não tiver data definida, não faz nada (retorna vazio ou fallback)
+        if (!customDate?.from || !customDate?.to) return [];
+        // O loop já foi tratado no if acima para custom
+        return dates;
       case "all":
       default:
         // Para "all", vamos pegar a data mais antiga dos dados reais ou 30 dias atrás como fallback
@@ -98,6 +123,24 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
 
   // 2. Filtra os dados existentes baseados no range (mantém lógica de KPIs)
   const filteredData = useMemo(() => {
+    if (range === "custom") {
+        if (!customDate?.from || !customDate?.to) return [];
+        
+        const startDate = new Date(customDate.from);
+        startDate.setHours(0, 0, 0, 0);
+        
+        const endDate = new Date(customDate.to);
+        endDate.setHours(23, 59, 59, 999);
+
+        return data.filter(item => {
+            const parts = item.date.split('/');
+            if (parts.length !== 3) return false;
+            const date = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`);
+            date.setHours(0, 0, 0, 0);
+            return date >= startDate && date <= endDate;
+        });
+    }
+
     const { startDate, endDate } = getDateRange(range);
 
     return data.filter(item => {
@@ -113,6 +156,25 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
 
   // 3. Filtra dados do período anterior para comparação
   const previousFilteredData = useMemo(() => {
+      // Para custom range, a comparação anterior é complexa (mesmo período antes?). 
+      // Por simplicidade, vamos comparar com o mesmo período imediatamente anterior (Duração X dias).
+      if (range === "custom" && customDate?.from && customDate?.to) {
+          const duration = customDate.to.getTime() - customDate.from.getTime();
+          const prevEndDate = new Date(customDate.from.getTime() - 86400000); // 1 dia antes do inicio
+          const prevStartDate = new Date(prevEndDate.getTime() - duration);
+          
+          prevStartDate.setHours(0, 0, 0, 0);
+          prevEndDate.setHours(23, 59, 59, 999);
+
+          return data.filter(item => {
+            const parts = item.date.split('/');
+            if (parts.length !== 3) return false;
+            const date = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`);
+            date.setHours(0, 0, 0, 0);
+            return date >= prevStartDate && date <= prevEndDate;
+          });
+      }
+
       const { startDate, endDate } = getPreviousDateRange(range);
       
       return data.filter(item => {
@@ -139,7 +201,7 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
         date: date.substring(0, 5), // DD/MM para exibição
         value: dataByDate[date] || 0 // Valor real ou 0
     }));
-  }, [dateRange, filteredData]);
+  }, [dateRange, filteredData]); // filteredData já depende de range e customDate
 
   const stats = aggregateMetrics(filteredData);
   const dailyData = getDailyEvolution(filteredData);
@@ -155,6 +217,11 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
       case "this_year": return "Este Ano";
       case "last_year": return "Ano Passado";
       case "30d": return "Últimos 30 Dias";
+      case "custom": 
+        if (customDate?.from && customDate?.to) {
+            return `${customDate.from.toLocaleDateString('pt-BR')} - ${customDate.to.toLocaleDateString('pt-BR')}`;
+        }
+        return "Período Personalizado";
       case "all": return "Todo o Período";
       default: return range;
     }
@@ -199,23 +266,32 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
           </div>
           <p className="text-muted-foreground">Acompanhamento de performance em tempo real.</p>
         </div>
-        <Select value={range} onValueChange={setRange}>
-          <SelectTrigger className="w-[180px] bg-card/50">
-             <SelectValue placeholder="Período" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="today">Hoje</SelectItem>
-            <SelectItem value="yesterday">Ontem</SelectItem>
-            <SelectItem value="this_week">Esta Semana</SelectItem>
-            <SelectItem value="last_week">Semana Passada</SelectItem>
-            <SelectItem value="this_month">Este Mês</SelectItem>
-            <SelectItem value="last_month">Mês Passado</SelectItem>
-            <SelectItem value="this_year">Este Ano</SelectItem>
-            <SelectItem value="last_year">Ano Passado</SelectItem>
-            <SelectItem value="30d">Últimos 30 dias</SelectItem>
-            <SelectItem value="all">Todo o Período</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col sm:flex-row gap-2">
+            {range === "custom" && (
+                <DatePickerWithRange 
+                    date={customDate} 
+                    setDate={setCustomDate} 
+                />
+            )}
+            <Select value={range} onValueChange={setRange}>
+              <SelectTrigger className="w-[180px] bg-card/50">
+                 <SelectValue placeholder="Período" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Hoje</SelectItem>
+                <SelectItem value="yesterday">Ontem</SelectItem>
+                <SelectItem value="this_week">Esta Semana</SelectItem>
+                <SelectItem value="last_week">Semana Passada</SelectItem>
+                <SelectItem value="this_month">Este Mês</SelectItem>
+                <SelectItem value="last_month">Mês Passado</SelectItem>
+                <SelectItem value="this_year">Este Ano</SelectItem>
+                <SelectItem value="last_year">Ano Passado</SelectItem>
+                <SelectItem value="30d">Últimos 30 dias</SelectItem>
+                <SelectItem value="custom">Personalizado</SelectItem>
+                <SelectItem value="all">Todo o Período</SelectItem>
+              </SelectContent>
+            </Select>
+        </div>
       </div>
 
       {/* KPI Grid - Linha 1 */}
