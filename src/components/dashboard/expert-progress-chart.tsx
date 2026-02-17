@@ -69,20 +69,33 @@ export function ExpertProgressChart({
         }
         
         // Priorizar Valor Total se existir, senão Depósitos
-        // Mas a métrica principal de progresso geralmente é Vendas Totais se disponível, ou Depósitos.
-        // O usuário pediu "evolução das métricas das lives" -> pode ser vendas.
-        // Vamos somar ambos para ter a opção, mas exibir o maior?
-        // Vamos usar Depósitos como padrão pois é garantido, ou Valor Total se tiver.
         const val = (item.valor_total && item.valor_total > 0) ? item.valor_total : item.deposits;
         grouped[key].value += val;
         grouped[key].count += 1;
     });
 
-    return Object.entries(grouped).map(([key, data]) => ({
-        date: key,
-        value: data.value,
-        originalDate: data.dateObj
-    })); // A ordem do object.entries não é garantida, mas geralmente segue inserção. Melhor reordenar se necessário.
+    const result = Object.entries(grouped)
+        .map(([key, data]) => ({
+            date: key,
+            value: data.value,
+            originalDate: data.dateObj
+        }))
+        .sort((a, b) => a.originalDate.getTime() - b.originalDate.getTime());
+
+    // Calcular variação percentual
+    return result.map((item, index) => {
+        let percentChange = 0;
+        if (index > 0) {
+            const prevValue = result[index - 1].value;
+            if (prevValue === 0) {
+                // Se era 0 e agora é algo, tecnicamente é infinito, mas vamos limitar a 100% para visualização
+                percentChange = item.value > 0 ? 100 : 0;
+            } else {
+                percentChange = ((item.value - prevValue) / prevValue) * 100;
+            }
+        }
+        return { ...item, percentChange };
+    });
     
   }, [data, granularity]);
 
@@ -150,7 +163,7 @@ export function ExpertProgressChart({
               <YAxis 
                 yAxisId="right"
                 orientation="right"
-                stroke="#888888" 
+                stroke="#f59e0b" 
                 fontSize={12} 
                 tickLine={false} 
                 axisLine={false}
@@ -164,7 +177,7 @@ export function ExpertProgressChart({
                   color: "#fafafa"
                 }}
                 formatter={(value: any, name: any) => {
-                    if (name === "percentChange") return [`${Number(value).toFixed(1)}%`, "Evolução"];
+                    if (name === "Evolução %" || name === "percentChange") return [`${Number(value).toFixed(1)}%`, "Evolução"];
                     return [`${valuePrefix}${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor'];
                 }}
               />
@@ -195,8 +208,10 @@ export function ExpertProgressChart({
                 dataKey="percentChange" 
                 name="Evolução %"
                 stroke="#f59e0b" 
-                strokeWidth={2}
-                dot={{ r: 3, fill: "#f59e0b" }}
+                strokeWidth={3}
+                dot={{ r: 4, fill: "#f59e0b", strokeWidth: 0 }}
+                activeDot={{ r: 6, fill: "#f59e0b", strokeWidth: 0 }}
+                connectNulls
               />
             </ComposedChart>
           </ResponsiveContainer>
