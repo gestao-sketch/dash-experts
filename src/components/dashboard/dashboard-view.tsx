@@ -308,41 +308,84 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
     }
   };
 
-  // Helper para pegar status atual (última data válida GLOBAL, independente do filtro)
+  // Helper para pegar status atual (Cálculo interno baseado em métricas dos últimos 7 dias)
   const currentStatus = useMemo(() => {
     // Se for geral, não faz sentido calcular um único status
     if (isGeneralView) return { classificacao: "N/A", tendencia: "N/A" };
 
     const now = new Date();
     now.setHours(23, 59, 59, 999);
+    
+    // Define intervalo dos últimos 7 dias
+    const startLast7d = new Date(now);
+    startLast7d.setDate(now.getDate() - 6); // Hoje + 6 anteriores = 7 dias
+    startLast7d.setHours(0, 0, 0, 0);
 
-    // Usamos 'data' (todos os dados) em vez de 'filteredData' para pegar o status mais recente real
-    // Isso garante que o badge reflita o estado atual do expert, mesmo olhando métricas antigas
-    // FILTRO IMPORTANTE: Ignorar datas futuras para evitar pegar projeções ou erros de preenchimento
-    const sorted = [...data]
-        .filter(item => {
+    // Define intervalo dos 7 dias anteriores (para tendência)
+    const startPrev7d = new Date(startLast7d);
+    startPrev7d.setDate(startLast7d.getDate() - 7);
+    const endPrev7d = new Date(startLast7d);
+    endPrev7d.setDate(startLast7d.getDate() - 1);
+    endPrev7d.setHours(23, 59, 59, 999);
+
+    const filterByDate = (start: Date, end: Date) => {
+        return data.filter(item => {
             const parts = item.date.split('/');
             const itemDate = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`);
-            return itemDate <= now;
-        })
-        .sort((a, b) => {
-            const parse = (d: string) => { const p = d.split('/'); return new Date(`${p[1]}/${p[0]}/${p[2]}`).getTime(); };
-            return parse(b.date) - parse(a.date);
+            return itemDate >= start && itemDate <= end;
         });
+    };
+
+    const last7dData = filterByDate(startLast7d, now);
+    const prev7dData = filterByDate(startPrev7d, endPrev7d);
+
+    // Agrega métricas
+    const sumMetrics = (dataset: Metrics[]) => {
+        return dataset.reduce((acc, item) => ({
+            cost: acc.cost + item.cost,
+            return: acc.return + (item.valor_total || item.deposits || 0) // Prioriza Vendas (Valor Total), senão Depósitos
+        }), { cost: 0, return: 0 });
+    };
+
+    const currentMetrics = sumMetrics(last7dData);
+    const prevMetrics = sumMetrics(prev7dData);
+
+    // --- Lógica de Classificação (ROAS) ---
+    // ROAS = Retorno / Custo
+    // >= 1.5 -> ESCALAR
+    // 1.0 a 1.49 -> MANTER
+    // < 1.0 -> EM RISCO
+    let classificacao = "EM RISCO";
+    const roas = currentMetrics.cost > 0 ? currentMetrics.return / currentMetrics.cost : 0;
+
+    if (last7dData.length === 0) {
+        classificacao = "SEM DADOS";
+    } else if (roas >= 1.5) {
+        classificacao = "ESCALAR";
+    } else if (roas >= 1.0) {
+        classificacao = "MANTER";
+    }
+
+    // --- Lógica de Tendência (Crescimento de Retorno) ---
+    // > +10% -> SUBINDO
+    // < -10% -> DESCENDO
+    // Entre -10% e +10% -> ESTÁVEL
+    let tendencia = "ESTÁVEL";
     
-    // Encontrar primeiro com classificação não vazia (o mais recente de todos ATÉ HOJE)
-    // Ignora valores como "-", "0", "N/A", "NULL" que podem indicar erro ou linha vazia
-    const invalidValues = ["-", "0", "N/A", "NULL", ""];
-    const latest = sorted.find(item => 
-        item.classificacao && 
-        !invalidValues.includes(item.classificacao) &&
-        item.classificacao.length > 1 // Garante que não é apenas um caractere solto
-    );
-    
+    // Se não teve retorno no período anterior
+    if (prevMetrics.return === 0) {
+        if (currentMetrics.return > 0) tendencia = "SUBINDO"; // Saiu do zero
+        // Se ambos forem zero, mantém estável
+    } else {
+        const growth = ((currentMetrics.return - prevMetrics.return) / prevMetrics.return) * 100;
+        if (growth > 10) tendencia = "SUBINDO";
+        else if (growth < -10) tendencia = "DESCENDO";
+    }
+
     return {
-        classificacao: latest?.classificacao || "N/A",
-        tendencia: latest?.tendencia || "N/A",
-        lastUpdate: latest?.date
+        classificacao,
+        tendencia,
+        lastUpdate: now.toLocaleDateString('pt-BR') // Data do cálculo (Hoje)
     };
   }, [data, isGeneralView]);
 
