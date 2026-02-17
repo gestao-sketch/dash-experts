@@ -24,6 +24,27 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
   const [customDate, setCustomDate] = useState<DateRange | undefined>(undefined);
   const isGeneralView = title.includes("Visão Geral");
 
+  const getRangeLabel = () => {
+    switch(range) {
+      case "today": return "Hoje";
+      case "yesterday": return "Ontem";
+      case "this_week": return "Esta Semana";
+      case "last_week": return "Semana Passada";
+      case "this_month": return "Este Mês";
+      case "last_month": return "Mês Passado";
+      case "this_year": return "Este Ano";
+      case "last_year": return "Ano Passado";
+      case "30d": return "Últimos 30 Dias";
+      case "custom": 
+        if (customDate?.from && customDate?.to) {
+            return `${customDate.from.toLocaleDateString('pt-BR')} - ${customDate.to.toLocaleDateString('pt-BR')}`;
+        }
+        return "Período Personalizado";
+      case "all": return "Todo o Período";
+      default: return range;
+    }
+  };
+
   // 1. Gera um array de datas completo baseado no range selecionado
   const dateRange = useMemo(() => {
     const dates: string[] = [];
@@ -342,6 +363,30 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
         />
       </div>
 
+      {/* KPI Grid - Evolução (Apenas para Experts) */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          {!isGeneralView && evolutionStats && (
+              <>
+                  <MetricCard 
+                    title="Crescimento Semanal (7d)" 
+                    value={`${evolutionStats.weeklyGrowth > 0 ? '+' : ''}${evolutionStats.weeklyGrowth.toFixed(1)}%`}
+                    icon={evolutionStats.weeklyGrowth >= 0 ? <TrendingUp /> : <TrendingDown />}
+                    color={evolutionStats.weeklyGrowth >= 0 ? "chart-1" : "chart-5"}
+                    description="vs. 7 dias anteriores"
+                    trend={evolutionStats.weeklyGrowth >= 0 ? "up" : "down"}
+                  />
+                  <MetricCard 
+                    title="Crescimento Mensal (30d)" 
+                    value={`${evolutionStats.monthlyGrowth > 0 ? '+' : ''}${evolutionStats.monthlyGrowth.toFixed(1)}%`}
+                    icon={evolutionStats.monthlyGrowth >= 0 ? <TrendingUp /> : <TrendingDown />}
+                    color={evolutionStats.monthlyGrowth >= 0 ? "chart-1" : "chart-5"}
+                    description="vs. 30 dias anteriores"
+                    trend={evolutionStats.monthlyGrowth >= 0 ? "up" : "down"}
+                  />
+              </>
+          )}
+      </div>
+
       {/* Layout Vertical Principal */}
       <div className="flex flex-col gap-6">
           
@@ -352,7 +397,7 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
         {isGeneralView ? (
             <ExpertsQualityCard data={filteredData} previousData={previousFilteredData} />
         ) : (
-            <LiveQualityCard data={data} /> // Passa 'data' completo em vez de 'filteredData'
+            <LiveQualityCard data={data} />
         )}
 
         {/* 2. Gráfico de Evolução (Expert ou Geral) */}
