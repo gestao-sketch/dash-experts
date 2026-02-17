@@ -15,7 +15,7 @@ export function LiveQualityCard({ data }: LiveQualityCardProps) {
         const parts = d.split('/');
         return new Date(`${parts[1]}/${parts[0]}/${parts[2]}`).getTime();
     };
-    return parse(a.date) - parse(b.date); // Crescente
+    return parse(b.date) - parse(a.date); // Decrescente (Mais recente no topo)
   });
 
   // Cálculo de Médias para o Relatório
