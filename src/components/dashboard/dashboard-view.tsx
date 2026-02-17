@@ -331,7 +331,13 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
         });
     
     // Encontrar primeiro com classificação não vazia (o mais recente de todos ATÉ HOJE)
-    const latest = sorted.find(item => item.classificacao && item.classificacao.length > 0 && item.classificacao !== "N/A");
+    // Ignora valores como "-", "0", "N/A", "NULL" que podem indicar erro ou linha vazia
+    const invalidValues = ["-", "0", "N/A", "NULL", ""];
+    const latest = sorted.find(item => 
+        item.classificacao && 
+        !invalidValues.includes(item.classificacao) &&
+        item.classificacao.length > 1 // Garante que não é apenas um caractere solto
+    );
     
     return {
         classificacao: latest?.classificacao || "N/A",

@@ -78,44 +78,42 @@ export async function fetchAllClientsData(): Promise<Record<string, Metrics[]>> 
 async function fetchSheetData(gid: string): Promise<Metrics[]> {
   if (!process.env.APPS_SCRIPT_URL) return [];
 
-  const url = `${process.env.APPS_SCRIPT_URL}?gid=${gid}&token=${process.env.API_TOKEN}`;
+    const url = `${process.env.APPS_SCRIPT_URL}?gid=${gid}&token=${process.env.API_TOKEN}`;
 
-  try {
-    const response = await fetch(url, { next: { revalidate: 300 } });
+    try {
+        // Reduzindo revalidate para 30s para evitar dados estale durante debug
+        const response = await fetch(url, { next: { revalidate: 30 } });
 
-    if (!response.ok) return [];
+        if (!response.ok) return [];
 
-    const data = await response.json();
+        const data = await response.json();
 
-    if (!Array.isArray(data)) return [];
+        if (!Array.isArray(data)) return [];
 
-    // O usuário informou que os dados começam na linha 5.
-    // Arrays são base 0, então linha 1 = index 0. Linha 5 = index 4.
-    // Vamos pegar do index 4 para frente.
-    
-    // Tentativa de encontrar colunas dinâmicas no cabeçalho (linha 4 = index 3)
-    let valorTotalIndex = -1;
-    let classificacaoIndex = -1;
-    let tendenciaIndex = -1;
+        // ...
+        
+        // Tentativa de encontrar colunas dinâmicas no cabeçalho (linha 4 = index 3)
+        let valorTotalIndex = -1;
+        let classificacaoIndex = -1;
+        let tendenciaIndex = -1;
 
-    if (data.length > 3) {
-        const headerRow = data[3];
-        if (Array.isArray(headerRow)) {
-            const getIndex = (term: string) => headerRow.findIndex((col: any) => 
-                String(col).toUpperCase().trim().includes(term.toUpperCase())
-            );
+        if (data.length > 3) {
+            const headerRow = data[3];
+            if (Array.isArray(headerRow)) {
+                const getIndex = (terms: string[]) => headerRow.findIndex((col: any) => {
+                    const colStr = String(col).toUpperCase().trim();
+                    return terms.some(term => colStr.includes(term));
+                });
 
-            valorTotalIndex = getIndex("VALOR TOTAL");
-            classificacaoIndex = getIndex("CLASSIFICAÇÃO") > -1 ? getIndex("CLASSIFICAÇÃO") : getIndex("CLASSIFICACAO");
-            tendenciaIndex = getIndex("TENDÊNCIA") > -1 ? getIndex("TENDÊNCIA") : getIndex("TENDENCIA");
+                valorTotalIndex = getIndex(["VALOR TOTAL", "VENDAS TOTAIS"]);
+                classificacaoIndex = getIndex(["CLASSIFICAÇÃO", "CLASSIFICACAO", "SITUAÇÃO", "STATUS", "CLASSIF"]);
+                tendenciaIndex = getIndex(["TENDÊNCIA", "TENDENCIA", "EVOLUÇÃO", "EVOLUCAO"]);
 
-            // Fallback para índices fixos (AW=48, AZ=51) se não achar no header
-            // AW (49ª coluna) = index 48
-            // AZ (52ª coluna) = index 51
-            if (classificacaoIndex === -1) classificacaoIndex = 48; 
-            if (tendenciaIndex === -1) tendenciaIndex = 51;
+                // Fallback para índices fixos (AW=48, AZ=51) se não achar no header
+                if (classificacaoIndex === -1) classificacaoIndex = 48; 
+                if (tendenciaIndex === -1) tendenciaIndex = 51;
+            }
         }
-    }
 
     const rows = data.slice(4); 
     
