@@ -182,26 +182,16 @@ export function ExpertProgressChart({
                 }}
               />
               <Legend />
-              {granularity === 'daily' ? (
-                  <Area 
-                    yAxisId="left"
-                    type="monotone" 
-                    dataKey="value" 
-                    name="Valor"
-                    stroke={chartColor} 
-                    strokeWidth={2}
-                    fillOpacity={1} 
-                    fill="url(#colorValueProgress)" 
-                  />
-              ) : (
-                  <Bar 
-                    yAxisId="left"
-                    dataKey="value" 
-                    name="Valor"
-                    fill={chartColor} 
-                    radius={[4, 4, 0, 0]}
-                  />
-              )}
+              <Area 
+                yAxisId="left"
+                type="monotone" 
+                dataKey="value" 
+                name="Valor"
+                stroke={chartColor} 
+                strokeWidth={2}
+                fillOpacity={1} 
+                fill="url(#colorValueProgress)" 
+              />
               <Line 
                 yAxisId="right"
                 type="monotone" 
