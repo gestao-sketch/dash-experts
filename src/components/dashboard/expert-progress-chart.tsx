@@ -22,7 +22,9 @@ export function ExpertProgressChart({
   const [granularity, setGranularity] = useState<Granularity>('daily');
   
   // Cor fixa para consistência
-  const chartColor = "#10b981"; // Emerald-500
+  const chartColor = "hsl(var(--chart-1))";
+  const trendColor = "hsl(var(--chart-4))";
+  const axisColor = "hsl(var(--muted-foreground))";
 
   // Função para agrupar dados
   const chartData = useMemo(() => {
@@ -146,7 +148,7 @@ export function ExpertProgressChart({
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted/20" vertical={false} />
               <XAxis 
                 dataKey="date" 
-                stroke="#888888" 
+                stroke={axisColor} 
                 fontSize={12} 
                 tickLine={false} 
                 axisLine={false}
@@ -154,7 +156,7 @@ export function ExpertProgressChart({
               />
               <YAxis 
                 yAxisId="left"
-                stroke="#888888" 
+                stroke={axisColor} 
                 fontSize={12} 
                 tickLine={false} 
                 axisLine={false} 
@@ -163,7 +165,7 @@ export function ExpertProgressChart({
               <YAxis 
                 yAxisId="right"
                 orientation="right"
-                stroke="#f59e0b" 
+                stroke={trendColor} 
                 fontSize={12} 
                 tickLine={false} 
                 axisLine={false}
@@ -171,10 +173,10 @@ export function ExpertProgressChart({
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: "rgba(9, 9, 11, 0.9)", 
-                  borderColor: "rgba(39, 39, 42, 0.5)",
-                  borderRadius: "8px",
-                  color: "#fafafa"
+                  backgroundColor: "hsl(var(--popover))", 
+                  borderColor: "hsl(var(--border))",
+                  borderRadius: "var(--radius)",
+                  color: "hsl(var(--popover-foreground))"
                 }}
                 formatter={(value: any, name: any) => {
                     if (name === "Evolução %" || name === "percentChange") return [`${Number(value).toFixed(1)}%`, "Evolução"];
@@ -197,11 +199,11 @@ export function ExpertProgressChart({
                 type="monotone" 
                 dataKey="percentChange" 
                 name="Evolução %"
-                stroke="#f59e0b" 
+                stroke={trendColor} 
                 strokeWidth={2}
                 dot={false}
-                activeDot={{ r: 6, fill: "#f59e0b", strokeWidth: 2, stroke: "var(--background)" }}
-                style={{ filter: "drop-shadow(0px 2px 4px rgba(245, 158, 11, 0.5))" }}
+                activeDot={{ r: 6, fill: trendColor, strokeWidth: 2, stroke: "hsl(var(--background))" }}
+                style={{ filter: "drop-shadow(0px 2px 4px hsl(var(--chart-4) / 0.5))" }}
                 connectNulls
               />
             </ComposedChart>

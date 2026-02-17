@@ -126,7 +126,7 @@ export function calculateForecast(dailyData: ReturnType<typeof getDailyEvolution
   return forecast;
 }
 
-function parseDateString(dateStr: string): string {
+export function parseDateString(dateStr: string): string {
   // Try to handle DD/MM/YYYY
   if (dateStr.includes('/')) {
     const parts = dateStr.split('/');
@@ -136,4 +136,131 @@ function parseDateString(dateStr: string): string {
     }
   }
   return dateStr;
+}
+
+// --- Novas Funções de Classificação e Evolução ---
+
+export type ExpertStatus = {
+  classificacao: string;
+  tendencia: string;
+  lastUpdate: string;
+};
+
+export type EvolutionStats = {
+  weeklyGrowth: number;
+  monthlyGrowth: number;
+};
+
+export function calculateExpertStatus(data: Metrics[]): ExpertStatus {
+    const now = new Date();
+    now.setHours(23, 59, 59, 999);
+    
+    // Define intervalo dos últimos 7 dias
+    const startLast7d = new Date(now);
+    startLast7d.setDate(now.getDate() - 6); // Hoje + 6 anteriores = 7 dias
+    startLast7d.setHours(0, 0, 0, 0);
+
+    // Define intervalo dos 7 dias anteriores (para tendência)
+    const startPrev7d = new Date(startLast7d);
+    startPrev7d.setDate(startLast7d.getDate() - 7);
+    const endPrev7d = new Date(startLast7d);
+    endPrev7d.setDate(startLast7d.getDate() - 1);
+    endPrev7d.setHours(23, 59, 59, 999);
+
+    const filterByDate = (start: Date, end: Date) => {
+        return data.filter(item => {
+            const parts = item.date.split('/');
+            const itemDate = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`);
+            return itemDate >= start && itemDate <= end;
+        });
+    };
+
+    const last7dData = filterByDate(startLast7d, now);
+    const prev7dData = filterByDate(startPrev7d, endPrev7d);
+
+    // Agrega métricas
+    const sumMetrics = (dataset: Metrics[]) => {
+        return dataset.reduce((acc, item) => ({
+            cost: acc.cost + item.cost,
+            return: acc.return + (item.valor_total || item.deposits || 0) // Prioriza Vendas (Valor Total), senão Depósitos
+        }), { cost: 0, return: 0 });
+    };
+
+    const currentMetrics = sumMetrics(last7dData);
+    const prevMetrics = sumMetrics(prev7dData);
+
+    // --- Lógica de Classificação (ROAS) ---
+    // ROAS = Retorno / Custo
+    // >= 1.5 -> ESCALAR
+    // 1.0 a 1.49 -> MANTER
+    // < 1.0 -> EM RISCO
+    let classificacao = "EM RISCO";
+    const roas = currentMetrics.cost > 0 ? currentMetrics.return / currentMetrics.cost : 0;
+
+    if (last7dData.length === 0) {
+        classificacao = "SEM DADOS";
+    } else if (roas >= 1.5) {
+        classificacao = "ESCALAR";
+    } else if (roas >= 1.0) {
+        classificacao = "MANTER";
+    }
+
+    // --- Lógica de Tendência (Crescimento de Retorno) ---
+    // > +10% -> SUBINDO
+    // < -10% -> DESCENDO
+    // Entre -10% e +10% -> ESTÁVEL
+    let tendencia = "ESTÁVEL";
+    
+    // Se não teve retorno no período anterior
+    if (prevMetrics.return === 0) {
+        if (currentMetrics.return > 0) tendencia = "SUBINDO"; // Saiu do zero
+        // Se ambos forem zero, mantém estável
+    } else {
+        const growth = ((currentMetrics.return - prevMetrics.return) / prevMetrics.return) * 100;
+        if (growth > 10) tendencia = "SUBINDO";
+        else if (growth < -10) tendencia = "DESCENDO";
+    }
+
+    return {
+        classificacao,
+        tendencia,
+        lastUpdate: now.toLocaleDateString('pt-BR')
+    };
+}
+
+export function calculateEvolutionStats(data: Metrics[]): EvolutionStats {
+    const now = new Date();
+    now.setHours(23, 59, 59, 999);
+
+    const getSumForRange = (daysAgoStart: number, daysAgoEnd: number) => {
+        const start = new Date(now);
+        start.setDate(now.getDate() - daysAgoStart);
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date(now);
+        end.setDate(now.getDate() - daysAgoEnd);
+        end.setHours(23, 59, 59, 999);
+
+        return data.reduce((acc, item) => {
+            const parts = item.date.split('/');
+            if (parts.length !== 3) return acc;
+            
+            const itemDate = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`);
+            
+            if (itemDate >= start && itemDate <= end) {
+                return acc + (item.valor_total || item.deposits || 0);
+            }
+            return acc;
+        }, 0);
+    };
+
+    const last7d = getSumForRange(6, 0); // 7 dias (incluindo hoje)
+    const prev7d = getSumForRange(13, 7); // 7 dias anteriores
+    const weeklyGrowth = prev7d === 0 ? (last7d > 0 ? 100 : 0) : ((last7d - prev7d) / prev7d) * 100;
+
+    const last30d = getSumForRange(29, 0); // 30 dias
+    const prev30d = getSumForRange(59, 30); // 30 dias anteriores
+    const monthlyGrowth = prev30d === 0 ? (last30d > 0 ? 100 : 0) : ((last30d - prev30d) / prev30d) * 100;
+
+    return { weeklyGrowth, monthlyGrowth };
 }

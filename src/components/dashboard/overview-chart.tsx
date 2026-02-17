@@ -19,8 +19,9 @@ export function OverviewChart({
   valuePrefix = "R$ "
 }: OverviewChartProps) {
   
-  // Cor Verde Fixa para consistência visual em ambos os temas
-  const greenColor = "#10b981"; // Emerald-500 equivalent
+  // Use theme color variable
+  const chartColor = "hsl(var(--chart-1))";
+  const axisColor = "hsl(var(--muted-foreground))";
 
   return (
     <Card className="col-span-4 border-border/50 bg-card">
@@ -34,21 +35,21 @@ export function OverviewChart({
             <AreaChart data={data}>
               <defs>
                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={greenColor} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={greenColor} stopOpacity={0} />
+                  <stop offset="5%" stopColor={chartColor} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted/20" vertical={false} />
               <XAxis 
                 dataKey="date" 
-                stroke="#888888" 
+                stroke={axisColor} 
                 fontSize={12} 
                 tickLine={false} 
                 axisLine={false}
                 minTickGap={30}
               />
               <YAxis 
-                stroke="#888888" 
+                stroke={axisColor} 
                 fontSize={12} 
                 tickLine={false} 
                 axisLine={false} 
@@ -56,18 +57,18 @@ export function OverviewChart({
               />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: "rgba(9, 9, 11, 0.9)", 
-                  borderColor: "rgba(39, 39, 42, 0.5)",
-                  borderRadius: "8px",
-                  color: "#fafafa"
+                  backgroundColor: "hsl(var(--popover))", 
+                  borderColor: "hsl(var(--border))",
+                  borderRadius: "var(--radius)",
+                  color: "hsl(var(--popover-foreground))"
                 }}
-                itemStyle={{ color: greenColor }}
+                itemStyle={{ color: chartColor }}
                 formatter={(value: any) => [`${valuePrefix}${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor']}
               />
               <Area 
                 type="monotone" 
                 dataKey="value" 
-                stroke={greenColor} 
+                stroke={chartColor} 
                 strokeWidth={2}
                 fillOpacity={1} 
                 fill="url(#colorValue)" 
