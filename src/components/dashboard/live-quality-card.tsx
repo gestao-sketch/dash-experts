@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Metrics } from "@/config/sheets";
@@ -9,14 +10,26 @@ interface LiveQualityCardProps {
 }
 
 export function LiveQualityCard({ data }: LiveQualityCardProps) {
-  // Ordena por data crescente (Janeiro -> Dezembro)
-  const sorted = [...data].sort((a, b) => {
-     const parse = (d: string) => {
-        const parts = d.split('/');
-        return new Date(`${parts[1]}/${parts[0]}/${parts[2]}`).getTime();
-    };
-    return parse(b.date) - parse(a.date); // Decrescente (Mais recente no topo)
-  });
+  // Ordena por data decrescente e remove datas futuras
+  const sorted = useMemo(() => {
+      const now = new Date();
+      now.setHours(23, 59, 59, 999); // Inclui o dia de hoje inteiro
+
+      return [...data]
+        .filter(item => {
+            const parts = item.date.split('/');
+            if (parts.length !== 3) return false;
+            const itemDate = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`);
+            return itemDate <= now;
+        })
+        .sort((a, b) => {
+            const parse = (d: string) => {
+                const parts = d.split('/');
+                return new Date(`${parts[1]}/${parts[0]}/${parts[2]}`).getTime();
+            };
+            return parse(b.date) - parse(a.date); // Decrescente
+        });
+  }, [data]);
 
   // Cálculo de Médias para o Relatório
   const validScores = data.filter(d => d.grupo_score > 0);
