@@ -249,6 +249,44 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
     return { weeklyGrowth, monthlyGrowth };
   }, [data, isGeneralView]);
 
+  // Média das colunas AW e AZ (Últimos 7 dias)
+  const customMetricsAvg = useMemo(() => {
+    if (isGeneralView) return null;
+
+    const now = new Date();
+    now.setHours(23, 59, 59, 999);
+    
+    const start = new Date(now);
+    start.setDate(now.getDate() - 6); // 7 dias (hoje + 6 atrás)
+    start.setHours(0, 0, 0, 0);
+
+    let sumAW = 0;
+    let sumAZ = 0;
+    let countAW = 0;
+    let countAZ = 0;
+
+    data.forEach(item => {
+        const parts = item.date.split('/');
+        const itemDate = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`);
+        
+        if (itemDate >= start && itemDate <= now) {
+            if (item.custom_aw !== undefined && item.custom_aw > 0) {
+                sumAW += item.custom_aw;
+                countAW++;
+            }
+            if (item.custom_az !== undefined && item.custom_az > 0) {
+                sumAZ += item.custom_az;
+                countAZ++;
+            }
+        }
+    });
+
+    return {
+        avgAW: countAW > 0 ? sumAW / countAW : 0,
+        avgAZ: countAZ > 0 ? sumAZ / countAZ : 0
+    };
+  }, [data, isGeneralView]);
+
   const getRangeLabel = () => {
     switch(range) {
       case "today": return "Hoje";
@@ -287,7 +325,8 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
     
     return {
         classificacao: latest?.classificacao || "N/A",
-        tendencia: latest?.tendencia || "N/A"
+        tendencia: latest?.tendencia || "N/A",
+        lastUpdate: latest?.date
     };
   }, [data, isGeneralView]);
 
@@ -302,6 +341,7 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
                 <ExpertStatusBadge 
                     classificacao={currentStatus.classificacao} 
                     tendencia={currentStatus.tendencia} 
+                    lastUpdate={currentStatus.lastUpdate}
                 />
             )}
           </div>

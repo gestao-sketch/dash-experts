@@ -4,9 +4,10 @@ import { TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle2, Rocket } 
 interface ExpertStatusBadgeProps {
   classificacao: string;
   tendencia: string;
+  lastUpdate?: string;
 }
 
-export function ExpertStatusBadge({ classificacao, tendencia }: ExpertStatusBadgeProps) {
+export function ExpertStatusBadge({ classificacao, tendencia, lastUpdate }: ExpertStatusBadgeProps) {
   // Se não tiver dados, mostra um badge neutro para debug/feedback visual
   if ((!classificacao || classificacao === "N/A") && (!tendencia || tendencia === "N/A")) {
       return (
@@ -40,7 +41,10 @@ export function ExpertStatusBadge({ classificacao, tendencia }: ExpertStatusBadg
   };
 
   return (
-    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-4 duration-500">
+    <div 
+        className="flex items-center gap-2 animate-in fade-in slide-in-from-left-4 duration-500 cursor-help"
+        title={lastUpdate ? `Atualizado em: ${lastUpdate}` : "Data desconhecida"}
+    >
       {classificacao && classificacao !== "N/A" && (
           <Badge variant="outline" className={`px-3 py-1 font-bold tracking-wide uppercase ${getClassificacaoStyle(classificacao)}`}>
             {getClassificacaoIcon(classificacao)}
