@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, BarChart, Bar } from "recharts";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid, BarChart, Bar, Line, ComposedChart, Legend } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Metrics } from "@/config/sheets";
@@ -123,84 +123,82 @@ export function ExpertProgressChart({
       <CardContent className="pl-2">
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            {granularity === 'daily' ? (
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="colorValueProgress" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={chartColor} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/20" vertical={false} />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="#888888" 
-                    fontSize={12} 
-                    tickLine={false} 
-                    axisLine={false}
-                    minTickGap={30}
-                  />
-                  <YAxis 
-                    stroke="#888888" 
-                    fontSize={12} 
-                    tickLine={false} 
-                    axisLine={false} 
-                    tickFormatter={(value) => `${valuePrefix}${value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}`}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: "rgba(9, 9, 11, 0.9)", 
-                      borderColor: "rgba(39, 39, 42, 0.5)",
-                      borderRadius: "8px",
-                      color: "#fafafa"
-                    }}
-                    itemStyle={{ color: chartColor }}
-                    formatter={(value: any) => [`${valuePrefix}${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor']}
-                  />
+            <ComposedChart data={chartData}>
+              <defs>
+                <linearGradient id="colorValueProgress" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={chartColor} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted/20" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                stroke="#888888" 
+                fontSize={12} 
+                tickLine={false} 
+                axisLine={false}
+                minTickGap={30}
+              />
+              <YAxis 
+                yAxisId="left"
+                stroke="#888888" 
+                fontSize={12} 
+                tickLine={false} 
+                axisLine={false} 
+                tickFormatter={(value) => `${valuePrefix}${value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}`}
+              />
+              <YAxis 
+                yAxisId="right"
+                orientation="right"
+                stroke="#888888" 
+                fontSize={12} 
+                tickLine={false} 
+                axisLine={false}
+                tickFormatter={(value) => `${value.toFixed(0)}%`}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: "rgba(9, 9, 11, 0.9)", 
+                  borderColor: "rgba(39, 39, 42, 0.5)",
+                  borderRadius: "8px",
+                  color: "#fafafa"
+                }}
+                formatter={(value: any, name: any) => {
+                    if (name === "percentChange") return [`${Number(value).toFixed(1)}%`, "Evolução"];
+                    return [`${valuePrefix}${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor'];
+                }}
+              />
+              <Legend />
+              {granularity === 'daily' ? (
                   <Area 
+                    yAxisId="left"
                     type="monotone" 
                     dataKey="value" 
+                    name="Valor"
                     stroke={chartColor} 
                     strokeWidth={2}
                     fillOpacity={1} 
                     fill="url(#colorValueProgress)" 
                   />
-                </AreaChart>
-            ) : (
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/20" vertical={false} />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="#888888" 
-                    fontSize={12} 
-                    tickLine={false} 
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    stroke="#888888" 
-                    fontSize={12} 
-                    tickLine={false} 
-                    axisLine={false} 
-                    tickFormatter={(value) => `${valuePrefix}${value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}`}
-                  />
-                  <Tooltip 
-                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                    contentStyle={{ 
-                      backgroundColor: "rgba(9, 9, 11, 0.9)", 
-                      borderColor: "rgba(39, 39, 42, 0.5)",
-                      borderRadius: "8px",
-                      color: "#fafafa"
-                    }}
-                    itemStyle={{ color: chartColor }}
-                    formatter={(value: any) => [`${valuePrefix}${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Valor']}
-                  />
+              ) : (
                   <Bar 
+                    yAxisId="left"
                     dataKey="value" 
+                    name="Valor"
                     fill={chartColor} 
                     radius={[4, 4, 0, 0]}
                   />
-                </BarChart>
-            )}
+              )}
+              <Line 
+                yAxisId="right"
+                type="monotone" 
+                dataKey="percentChange" 
+                name="Evolução %"
+                stroke="#f59e0b" 
+                strokeWidth={2}
+                dot={{ r: 3, fill: "#f59e0b" }}
+              />
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </CardContent>
