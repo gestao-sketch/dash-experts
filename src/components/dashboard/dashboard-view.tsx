@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Metrics } from "@/config/sheets";
-import { aggregateMetrics, getDailyEvolution } from "@/lib/analytics";
+import { aggregateMetrics, getDailyEvolution, calculateExpertStatus, calculateEvolutionStats } from "@/lib/analytics";
 import { getDateRange, getPreviousDateRange } from "@/lib/utils";
 import { MetricCard } from "./metric-card";
 import { OverviewChart } from "./overview-chart";
@@ -20,7 +20,7 @@ import { DateRange } from "react-day-picker";
 import { DollarSign, TrendingUp, TrendingDown, Users, ShoppingCart, ArrowRightLeft } from "lucide-react";
 
 export function DashboardView({ data, title }: { data: Metrics[], title: string }) {
-  const [range, setRange] = useState("30d");
+  const [range, setRange] = useState("today");
   const [customDate, setCustomDate] = useState<DateRange | undefined>(undefined);
   const isGeneralView = title.includes("Visão Geral");
 
@@ -210,183 +210,14 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
   // Cálculo de Evolução (Semanal e Mensal) - Baseado em dados TOTAIS (data)
   const evolutionStats = useMemo(() => {
     if (isGeneralView) return null;
-
-    const now = new Date();
-    now.setHours(23, 59, 59, 999);
-
-    const getSumForRange = (daysAgoStart: number, daysAgoEnd: number) => {
-        const start = new Date(now);
-        start.setDate(now.getDate() - daysAgoStart);
-        start.setHours(0, 0, 0, 0);
-
-        const end = new Date(now);
-        end.setDate(now.getDate() - daysAgoEnd);
-        end.setHours(23, 59, 59, 999);
-
-        return data.reduce((acc, item) => {
-            const parts = item.date.split('/');
-            // Validação simples de data
-            if (parts.length !== 3) return acc;
-            
-            const itemDate = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`);
-            
-            if (itemDate >= start && itemDate <= end) {
-                // Prioriza Valor Total (Vendas) se existir, senão Depósitos
-                return acc + (item.valor_total || item.deposits || 0);
-            }
-            return acc;
-        }, 0);
-    };
-
-    const last7d = getSumForRange(6, 0); // 7 dias (incluindo hoje)
-    const prev7d = getSumForRange(13, 7); // 7 dias anteriores
-    const weeklyGrowth = prev7d === 0 ? (last7d > 0 ? 100 : 0) : ((last7d - prev7d) / prev7d) * 100;
-
-    const last30d = getSumForRange(29, 0); // 30 dias
-    const prev30d = getSumForRange(59, 30); // 30 dias anteriores
-    const monthlyGrowth = prev30d === 0 ? (last30d > 0 ? 100 : 0) : ((last30d - prev30d) / prev30d) * 100;
-
-    return { weeklyGrowth, monthlyGrowth };
+    return calculateEvolutionStats(data);
   }, [data, isGeneralView]);
-
-  // Média das colunas AW e AZ (Últimos 7 dias)
-  const customMetricsAvg = useMemo(() => {
-    if (isGeneralView) return null;
-
-    const now = new Date();
-    now.setHours(23, 59, 59, 999);
-    
-    const start = new Date(now);
-    start.setDate(now.getDate() - 6); // 7 dias (hoje + 6 atrás)
-    start.setHours(0, 0, 0, 0);
-
-    let sumAW = 0;
-    let sumAZ = 0;
-    let countAW = 0;
-    let countAZ = 0;
-
-    data.forEach(item => {
-        const parts = item.date.split('/');
-        const itemDate = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`);
-        
-        if (itemDate >= start && itemDate <= now) {
-            if (item.custom_aw !== undefined && item.custom_aw > 0) {
-                sumAW += item.custom_aw;
-                countAW++;
-            }
-            if (item.custom_az !== undefined && item.custom_az > 0) {
-                sumAZ += item.custom_az;
-                countAZ++;
-            }
-        }
-    });
-
-    return {
-        avgAW: countAW > 0 ? sumAW / countAW : 0,
-        avgAZ: countAZ > 0 ? sumAZ / countAZ : 0
-    };
-  }, [data, isGeneralView]);
-
-  const getRangeLabel = () => {
-    switch(range) {
-      case "today": return "Hoje";
-      case "yesterday": return "Ontem";
-      case "this_week": return "Esta Semana";
-      case "last_week": return "Semana Passada";
-      case "this_month": return "Este Mês";
-      case "last_month": return "Mês Passado";
-      case "this_year": return "Este Ano";
-      case "last_year": return "Ano Passado";
-      case "30d": return "Últimos 30 Dias";
-      case "custom": 
-        if (customDate?.from && customDate?.to) {
-            return `${customDate.from.toLocaleDateString('pt-BR')} - ${customDate.to.toLocaleDateString('pt-BR')}`;
-        }
-        return "Período Personalizado";
-      case "all": return "Todo o Período";
-      default: return range;
-    }
-  };
 
   // Helper para pegar status atual (Cálculo interno baseado em métricas dos últimos 7 dias)
   const currentStatus = useMemo(() => {
     // Se for geral, não faz sentido calcular um único status
-    if (isGeneralView) return { classificacao: "N/A", tendencia: "N/A" };
-
-    const now = new Date();
-    now.setHours(23, 59, 59, 999);
-    
-    // Define intervalo dos últimos 7 dias
-    const startLast7d = new Date(now);
-    startLast7d.setDate(now.getDate() - 6); // Hoje + 6 anteriores = 7 dias
-    startLast7d.setHours(0, 0, 0, 0);
-
-    // Define intervalo dos 7 dias anteriores (para tendência)
-    const startPrev7d = new Date(startLast7d);
-    startPrev7d.setDate(startLast7d.getDate() - 7);
-    const endPrev7d = new Date(startLast7d);
-    endPrev7d.setDate(startLast7d.getDate() - 1);
-    endPrev7d.setHours(23, 59, 59, 999);
-
-    const filterByDate = (start: Date, end: Date) => {
-        return data.filter(item => {
-            const parts = item.date.split('/');
-            const itemDate = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`);
-            return itemDate >= start && itemDate <= end;
-        });
-    };
-
-    const last7dData = filterByDate(startLast7d, now);
-    const prev7dData = filterByDate(startPrev7d, endPrev7d);
-
-    // Agrega métricas
-    const sumMetrics = (dataset: Metrics[]) => {
-        return dataset.reduce((acc, item) => ({
-            cost: acc.cost + item.cost,
-            return: acc.return + (item.valor_total || item.deposits || 0) // Prioriza Vendas (Valor Total), senão Depósitos
-        }), { cost: 0, return: 0 });
-    };
-
-    const currentMetrics = sumMetrics(last7dData);
-    const prevMetrics = sumMetrics(prev7dData);
-
-    // --- Lógica de Classificação (ROAS) ---
-    // ROAS = Retorno / Custo
-    // >= 1.5 -> ESCALAR
-    // 1.0 a 1.49 -> MANTER
-    // < 1.0 -> EM RISCO
-    let classificacao = "EM RISCO";
-    const roas = currentMetrics.cost > 0 ? currentMetrics.return / currentMetrics.cost : 0;
-
-    if (last7dData.length === 0) {
-        classificacao = "SEM DADOS";
-    } else if (roas >= 1.5) {
-        classificacao = "ESCALAR";
-    } else if (roas >= 1.0) {
-        classificacao = "MANTER";
-    }
-
-    // --- Lógica de Tendência (Crescimento de Retorno) ---
-    // > +10% -> SUBINDO
-    // < -10% -> DESCENDO
-    // Entre -10% e +10% -> ESTÁVEL
-    let tendencia = "ESTÁVEL";
-    
-    // Se não teve retorno no período anterior
-    if (prevMetrics.return === 0) {
-        if (currentMetrics.return > 0) tendencia = "SUBINDO"; // Saiu do zero
-        // Se ambos forem zero, mantém estável
-    } else {
-        const growth = ((currentMetrics.return - prevMetrics.return) / prevMetrics.return) * 100;
-        if (growth > 10) tendencia = "SUBINDO";
-        else if (growth < -10) tendencia = "DESCENDO";
-    }
-
-    return {
-        classificacao,
-        tendencia,
-        lastUpdate: now.toLocaleDateString('pt-BR') // Data do cálculo (Hoje)
-    };
+    if (isGeneralView) return { classificacao: "N/A", tendencia: "N/A", lastUpdate: "" };
+    return calculateExpertStatus(data);
   }, [data, isGeneralView]);
 
   return (
