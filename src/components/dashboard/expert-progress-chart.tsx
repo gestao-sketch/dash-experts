@@ -208,9 +208,10 @@ export function ExpertProgressChart({
                 dataKey="percentChange" 
                 name="Evolução %"
                 stroke="#f59e0b" 
-                strokeWidth={3}
-                dot={{ r: 4, fill: "#f59e0b", strokeWidth: 0 }}
-                activeDot={{ r: 6, fill: "#f59e0b", strokeWidth: 0 }}
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 6, fill: "#f59e0b", strokeWidth: 2, stroke: "var(--background)" }}
+                style={{ filter: "drop-shadow(0px 2px 4px rgba(245, 158, 11, 0.5))" }}
                 connectNulls
               />
             </ComposedChart>
