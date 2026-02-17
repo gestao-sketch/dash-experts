@@ -24,7 +24,8 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
   const [customDate, setCustomDate] = useState<DateRange | undefined>(undefined);
   const isGeneralView = title.includes("Visão Geral");
 
-  const getRangeLabel = () => {
+  // Helper para label do range
+  const rangeLabel = useMemo(() => {
     switch(range) {
       case "today": return "Hoje";
       case "yesterday": return "Ontem";
@@ -43,7 +44,7 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
       case "all": return "Todo o Período";
       default: return range;
     }
-  };
+  }, [range, customDate]);
 
   // 1. Gera um array de datas completo baseado no range selecionado
   const dateRange = useMemo(() => {
@@ -405,7 +406,7 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
              <OverviewChart 
               data={chartData} 
               title="Evolução de Depósitos" 
-              description={getRangeLabel()}
+              description={rangeLabel}
               color="var(--chart-1)"
             />
         ) : (
