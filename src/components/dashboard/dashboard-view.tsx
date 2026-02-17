@@ -313,15 +313,25 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
     // Se for geral, não faz sentido calcular um único status
     if (isGeneralView) return { classificacao: "N/A", tendencia: "N/A" };
 
+    const now = new Date();
+    now.setHours(23, 59, 59, 999);
+
     // Usamos 'data' (todos os dados) em vez de 'filteredData' para pegar o status mais recente real
     // Isso garante que o badge reflita o estado atual do expert, mesmo olhando métricas antigas
-    const sorted = [...data].sort((a, b) => {
-        const parse = (d: string) => { const p = d.split('/'); return new Date(`${p[1]}/${p[0]}/${p[2]}`).getTime(); };
-        return parse(b.date) - parse(a.date);
-    });
+    // FILTRO IMPORTANTE: Ignorar datas futuras para evitar pegar projeções ou erros de preenchimento
+    const sorted = [...data]
+        .filter(item => {
+            const parts = item.date.split('/');
+            const itemDate = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`);
+            return itemDate <= now;
+        })
+        .sort((a, b) => {
+            const parse = (d: string) => { const p = d.split('/'); return new Date(`${p[1]}/${p[0]}/${p[2]}`).getTime(); };
+            return parse(b.date) - parse(a.date);
+        });
     
-    // Encontrar primeiro com classificação não vazia (o mais recente de todos)
-    const latest = sorted.find(item => item.classificacao && item.classificacao.length > 0);
+    // Encontrar primeiro com classificação não vazia (o mais recente de todos ATÉ HOJE)
+    const latest = sorted.find(item => item.classificacao && item.classificacao.length > 0 && item.classificacao !== "N/A");
     
     return {
         classificacao: latest?.classificacao || "N/A",
