@@ -352,7 +352,7 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
         {isGeneralView ? (
             <ExpertsQualityCard data={filteredData} previousData={previousFilteredData} />
         ) : (
-            <LiveQualityCard data={filteredData} />
+            <LiveQualityCard data={data} /> // Passa 'data' completo em vez de 'filteredData'
         )}
 
         {/* 2. Gráfico de Evolução (Expert ou Geral) */}
