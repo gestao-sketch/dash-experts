@@ -7,8 +7,13 @@ interface ExpertStatusBadgeProps {
 }
 
 export function ExpertStatusBadge({ classificacao, tendencia }: ExpertStatusBadgeProps) {
+  // Se não tiver dados, mostra um badge neutro para debug/feedback visual
   if ((!classificacao || classificacao === "N/A") && (!tendencia || tendencia === "N/A")) {
-      return null;
+      return (
+        <Badge variant="outline" className="px-3 py-1 bg-muted/50 text-muted-foreground font-medium text-[10px] uppercase tracking-wide border-dashed">
+            Sem Status
+        </Badge>
+      );
   }
 
   const getClassificacaoStyle = (status: string) => {
