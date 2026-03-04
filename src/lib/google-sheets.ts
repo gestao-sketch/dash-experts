@@ -1,5 +1,6 @@
 import { slugify } from "@/lib/utils";
 import { COLUMN_MAPPING, Metrics, ClientConfig } from "@/config/sheets";
+import { getHistoricalData } from "@/config/historical-data";
 
 // Cache simples em memória
 let clientsCache: ClientConfig[] | null = null;
@@ -56,7 +57,10 @@ export async function fetchClientData(slug: string): Promise<Metrics[]> {
     return [];
   }
 
-  return fetchSheetData(client.gid);
+  const liveData = await fetchSheetData(client.gid);
+  const historicalData = getHistoricalData(slug);
+  
+  return [...historicalData, ...liveData];
 }
 
 export async function fetchAllClientsData(): Promise<Record<string, Metrics[]>> {
@@ -66,8 +70,10 @@ export async function fetchAllClientsData(): Promise<Record<string, Metrics[]>> 
   await Promise.all(
     clients.map(async (client) => {
       const data = await fetchSheetData(client.gid);
-      // Injeta o nome do cliente nos dados
-      const enrichedData = data.map(d => ({ ...d, clientName: client.name }));
+      const history = getHistoricalData(client.slug);
+      
+      // Injeta o nome do cliente nos dados e concatena histórico
+      const enrichedData = [...history, ...data].map(d => ({ ...d, clientName: client.name }));
       allData[client.slug] = enrichedData;
     })
   );
