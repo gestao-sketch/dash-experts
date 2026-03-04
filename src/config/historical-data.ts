@@ -12,10 +12,10 @@ interface MonthlyData {
 // Mapa de Slug do cliente -> Dados Históricos
 const HISTORICAL_ENTRIES: Record<string, MonthlyData[]> = {
   "allan": [
-    { month: 9, year: 2025, investment: 4703.39, deposits: 230045.73, revenue: 3139.10 }, // Infoproduto assumido como REV
-    { month: 10, year: 2025, investment: 110964.31, deposits: 495115.72, revenue: 29624.10 },
-    { month: 11, year: 2025, investment: 79322.30, deposits: 450602.88, revenue: 36883.40 },
-    { month: 12, year: 2025, investment: 123172.16, deposits: 665412.85, revenue: 36763.70 },
+    { month: 9, year: 2025, investment: 4703.39, deposits: 230045.73, revenue: 0 }, 
+    { month: 10, year: 2025, investment: 110964.31, deposits: 495115.72, revenue: 0 },
+    { month: 11, year: 2025, investment: 79322.30, deposits: 450602.88, revenue: 0 },
+    { month: 12, year: 2025, investment: 123172.16, deposits: 665412.85, revenue: 0 },
   ],
   "sheik": [
     { month: 9, year: 2025, investment: 0.00, deposits: 0.00, revenue: 0.00 },
