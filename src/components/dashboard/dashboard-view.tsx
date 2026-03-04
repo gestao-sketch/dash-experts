@@ -411,10 +411,7 @@ export function DashboardView({ data, title }: { data: Metrics[], title: string 
               color="var(--chart-1)"
             />
         ) : (
-            <div className="flex flex-col gap-6">
-                <ExpertProgressChart data={filteredData} title={`Progresso: ${title.replace("Dashboard - ", "")}`} />
-                <HistoricalComparisonCard data={data} />
-            </div>
+            <ExpertProgressChart data={filteredData} allData={data} title={`Progresso: ${title.replace("Dashboard - ", "")}`} />
         )}
 
         {/* 3. Top Experts - Apenas na visão geral */}

@@ -8,14 +8,16 @@ import { Metrics } from "@/config/sheets";
 
 interface ExpertProgressChartProps {
   data: Metrics[];
+  allData?: Metrics[]; // Dados completos para visão anual
   title?: string;
   valuePrefix?: string;
 }
 
-type Granularity = 'daily' | 'weekly' | 'monthly';
+type Granularity = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export function ExpertProgressChart({ 
   data, 
+  allData,
   title = "Progresso do Expert", 
   valuePrefix = "R$ "
 }: ExpertProgressChartProps) {
@@ -30,8 +32,11 @@ export function ExpertProgressChart({
 
   // Função para agrupar dados
   const chartData = useMemo(() => {
+    // Se for anual, usa allData se disponível, senão usa data (que pode estar filtrado)
+    const sourceData = (granularity === 'yearly' && allData) ? allData : data;
+
     // 1. Converter datas e ordenar
-    const sortedData = [...data]
+    const sortedData = [...sourceData]
       .map(item => {
         const parts = item.date.split('/');
         return {
@@ -63,6 +68,9 @@ export function ExpertProgressChart({
             case 'monthly':
                 const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
                 key = `${monthNames[date.getMonth()]}/${date.getFullYear().toString().substring(2)}`;
+                break;
+            case 'yearly':
+                key = date.getFullYear().toString();
                 break;
         }
 
@@ -101,7 +109,7 @@ export function ExpertProgressChart({
         return { ...item, percentChange };
     });
     
-  }, [data, granularity]);
+  }, [data, allData, granularity]);
 
   return (
     <Card className="col-span-4 border-border/50 bg-card">
@@ -134,6 +142,14 @@ export function ExpertProgressChart({
                 onClick={() => setGranularity('monthly')}
             >
                 Mensal
+            </Button>
+            <Button 
+                variant={granularity === 'yearly' ? 'secondary' : 'ghost'} 
+                size="sm" 
+                className="h-8 text-xs px-3"
+                onClick={() => setGranularity('yearly')}
+            >
+                Anual
             </Button>
         </div>
       </CardHeader>
@@ -195,7 +211,7 @@ export function ExpertProgressChart({
                 name="Investimento"
                 fill={investmentColor} 
                 radius={[4, 4, 0, 0]}
-                barSize={20}
+                barSize={granularity === 'yearly' ? 80 : 20} // Barra mais grossa no anual
               />
 
               {/* Depósitos (Área) - Contexto de Volume */}
