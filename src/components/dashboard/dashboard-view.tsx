@@ -14,7 +14,6 @@ import { TopExpertsCard } from "./top-experts-card";
 import { ExpertProgressChart } from "./expert-progress-chart";
 import { ScalingOpportunitiesCard } from "./scaling-opportunities-card";
 import { ExpertStatusBadge } from "./expert-status-badge";
-import { HistoricalComparisonCard } from "./historical-comparison-card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePickerWithRange } from "@/components/date-range-picker";
 import { DateRange } from "react-day-picker";
